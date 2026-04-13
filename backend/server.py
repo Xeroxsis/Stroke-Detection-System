@@ -14,11 +14,12 @@ import base64
 import uuid
 from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel
-from typing import Optional
-from fastapi.responses import StreamingResponse
+from typing import Optional, List
+from fastapi.responses import StreamingResponse, FileResponse
 
 from ml_model import StrokeDetectionModel
 from pdf_generator import generate_pdf_report
+from demo_images import generate_demo_images, DEMO_IMAGES_META, DEMO_DIR
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -427,6 +428,116 @@ async def root():
     return {"message": "NeuroScan AI API"}
 
 
+# --- Demo Images ---
+@api_router.get("/demo/images")
+async def list_demo_images():
+    return DEMO_IMAGES_META
+
+
+@api_router.get("/demo/images/{image_id}")
+async def get_demo_image(image_id: str):
+    meta = next((m for m in DEMO_IMAGES_META if m["id"] == image_id), None)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Demo image not found")
+    path = os.path.join(DEMO_DIR, meta["filename"])
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Demo image file not found")
+    return FileResponse(path, media_type="image/png", filename=meta["filename"])
+
+
+# --- Batch Analysis ---
+@api_router.post("/scans/batch-analyze")
+async def batch_analyze(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    patient_id: str = Form(None),
+    patient_name: str = Form(None)
+):
+    user = await get_current_user(request)
+    require_role(user, "doctor")
+
+    if len(files) > 20:
+        raise HTTPException(status_code=400, detail="Maximum 20 files per batch.")
+
+    patient_data = None
+    if patient_id:
+        patient_data = await db.patients.find_one({"id": patient_id, "user_id": user["_id"]}, {"_id": 0})
+
+    results = []
+    for file in files:
+        image_bytes = await file.read()
+        if len(image_bytes) > 10 * 1024 * 1024:
+            results.append({"filename": file.filename, "error": "File too large (max 10MB)"})
+            continue
+        try:
+            result = stroke_model.predict(image_bytes)
+            image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+            content_type = file.content_type or "image/png"
+            scan_doc = {
+                "id": str(uuid.uuid4()),
+                "user_id": user["_id"],
+                "patient_id": patient_id,
+                "patient_name": patient_name or (patient_data.get("name") if patient_data else "Batch Scan"),
+                "filename": file.filename,
+                "content_type": content_type,
+                "image_data": image_b64,
+                "classification": result["classification"],
+                "confidence": result["confidence"],
+                "probabilities": result["probabilities"],
+                "features": result["features"],
+                "stroke_info": result["stroke_info"],
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.scans.insert_one(scan_doc)
+            scan_doc.pop("_id", None)
+            resp = {k: v for k, v in scan_doc.items() if k != "image_data"}
+            resp["has_image"] = True
+            results.append(resp)
+        except Exception as e:
+            logger.error(f"Batch scan error for {file.filename}: {e}")
+            results.append({"filename": file.filename, "error": str(e)})
+
+    return results
+
+
+@api_router.post("/demo/analyze-all")
+async def analyze_all_demos(request: Request):
+    user = await get_current_user(request)
+    require_role(user, "doctor")
+    results = []
+    for meta in DEMO_IMAGES_META:
+        path = os.path.join(DEMO_DIR, meta["filename"])
+        if not os.path.exists(path):
+            continue
+        with open(path, "rb") as f:
+            image_bytes = f.read()
+        result = stroke_model.predict(image_bytes)
+        image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+        scan_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": user["_id"],
+            "patient_id": None,
+            "patient_name": f"Demo: {meta['label']}",
+            "filename": meta["filename"],
+            "content_type": "image/png",
+            "image_data": image_b64,
+            "classification": result["classification"],
+            "confidence": result["confidence"],
+            "probabilities": result["probabilities"],
+            "features": result["features"],
+            "stroke_info": result["stroke_info"],
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.scans.insert_one(scan_doc)
+        scan_doc.pop("_id", None)
+        resp = {k: v for k, v in scan_doc.items() if k != "image_data"}
+        resp["has_image"] = True
+        resp["demo_id"] = meta["id"]
+        resp["expected"] = meta["expected"]
+        results.append(resp)
+    return results
+
+
 # --- Admin Routes ---
 @api_router.get("/admin/users")
 async def list_users(request: Request):
@@ -622,6 +733,7 @@ async def startup():
         except Exception as e:
             logger.warning(f"Failed to load trained model: {e}")
     await seed_admin()
+    generate_demo_images()
     logger.info("NeuroScan AI started successfully")
 
 

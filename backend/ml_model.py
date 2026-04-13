@@ -222,36 +222,58 @@ class StrokeDetectionModel:
         return classification, confidence, probabilities
 
     def _classify_heuristic(self, features):
+        # Key discriminators from feature analysis:
+        # - asymmetry_max: hemorrhagic>>ischemic>>normal
+        # - very_high_intensity_ratio: hemorrhagic>0, others~0
+        # - asymmetry_ratio/mean: stroke>normal
+        # - num_dark_regions: ischemic>others
+        # - quadrant imbalance for stroke lateralization
+
+        asym_mean = features['asymmetry_mean']
+        asym_ratio = features['asymmetry_ratio']
+        asym_max = features['asymmetry_max']
+        hi_ratio = features['high_intensity_ratio']
+        vhi_ratio = features['very_high_intensity_ratio']
+        lo_ratio = features['low_intensity_ratio']
+        vlo_ratio = features['very_low_intensity_ratio']
+        mid_ratio = features['mid_intensity_ratio']
+        n_bright = features['num_bright_regions']
+        n_dark = features['num_dark_regions']
+        edge_d = features['edge_density']
+        tex_c = features['texture_contrast']
+        center_r = features['center_peripheral_ratio']
+
+        # Hemorrhagic: bright lesion + asymmetry + high max asymmetry
+        has_bright = 1.0 if vhi_ratio > 0.001 else 0.0
         hemorrhagic_score = (
-            features['high_intensity_ratio'] * 4.0 +
-            features['very_high_intensity_ratio'] * 6.0 +
-            features['asymmetry_ratio'] * 3.0 +
-            features['asymmetry_mean'] / 40.0 * 2.0 +
-            features['texture_contrast'] / 30.0 * 1.5 +
-            features['num_bright_regions'] / 10.0 * 2.0 +
-            features['edge_density'] * 2.0 +
-            max(0, features['skewness']) * 1.0
+            vhi_ratio * 200.0 +
+            has_bright * 4.0 +
+            hi_ratio * 10.0 +
+            (asym_max / 200.0) * 4.0 +
+            asym_ratio * 4.0 +
+            max(0, asym_mean - 5.0) / 10.0 * 2.0 +
+            n_bright / 80.0 * 1.5
         )
 
+        # Ischemic: dark regions + asymmetry + no bright spots
         ischemic_score = (
-            features['low_intensity_ratio'] * 4.0 +
-            features['very_low_intensity_ratio'] * 5.0 +
-            features['asymmetry_ratio'] * 2.5 +
-            features['asymmetry_mean'] / 35.0 * 2.0 +
-            features['num_dark_regions'] / 8.0 * 2.0 +
-            (1 - features['mid_intensity_ratio']) * 2.0 +
-            max(0, -features['skewness']) * 1.0 +
-            max(0, 1 - features['center_peripheral_ratio']) * 1.5
+            max(0, n_dark - 8) * 2.0 +
+            asym_ratio * 5.0 +
+            max(0, asym_mean - 5.0) / 8.0 * 3.5 +
+            (1 - mid_ratio) * 2.0 +
+            edge_d * 5.0 +
+            (1.0 - has_bright) * 3.0 +
+            max(0, lo_ratio - 0.51) * 30.0
         )
 
+        # Normal: symmetric + balanced + low anomalies
         normal_score = (
-            (1 - features['asymmetry_ratio']) * 3.0 +
-            (1 - features['high_intensity_ratio']) * 2.0 +
-            (1 - features['low_intensity_ratio']) * 2.0 +
-            features['mid_intensity_ratio'] * 3.0 +
-            max(0, 1 - abs(features['skewness'])) * 1.5 +
-            min(features['hist_entropy'] / 7.0, 1.0) * 2.0 +
-            min(features['center_peripheral_ratio'], 1.5) * 1.5
+            max(0, 1.0 - asym_ratio * 15.0) * 5.0 +
+            max(0, 1.0 - (asym_mean - 4.0) / 8.0) * 4.0 +
+            (1 - vhi_ratio * 50.0) * 2.0 +
+            mid_ratio * 3.0 +
+            min(features['hist_entropy'] / 7.0, 1.0) * 1.5 +
+            max(0, 6.0 - n_dark) / 6.0 * 2.0
         )
 
         hemorrhagic_score = max(hemorrhagic_score, 0.01)
