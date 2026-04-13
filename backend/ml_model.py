@@ -93,6 +93,9 @@ class StrokeDetectionModel:
 
     def __init__(self):
         self.target_size = (256, 256)
+        self.trained_model = None
+        self.is_trained = False
+        self.feature_keys = None
         logger.info("Stroke Detection Model initialized")
 
     def preprocess_image(self, image_bytes):
@@ -200,6 +203,25 @@ class StrokeDetectionModel:
         return features
 
     def classify(self, features):
+        if self.is_trained and self.trained_model is not None:
+            return self._classify_trained(features)
+        return self._classify_heuristic(features)
+
+    def _classify_trained(self, features):
+        feature_keys = sorted(features.keys())
+        feature_vector = [features[k] for k in feature_keys]
+        prediction = self.trained_model.predict([feature_vector])[0]
+        proba = self.trained_model.predict_proba([feature_vector])[0]
+        classes = list(self.trained_model.classes_)
+        probabilities = {c: round(float(p), 4) for c, p in zip(classes, proba)}
+        for c in ['hemorrhagic', 'ischemic', 'normal']:
+            if c not in probabilities:
+                probabilities[c] = 0.0
+        classification = max(probabilities, key=probabilities.get)
+        confidence = probabilities[classification]
+        return classification, confidence, probabilities
+
+    def _classify_heuristic(self, features):
         hemorrhagic_score = (
             features['high_intensity_ratio'] * 4.0 +
             features['very_high_intensity_ratio'] * 6.0 +
@@ -279,3 +301,47 @@ class StrokeDetectionModel:
         except Exception as e:
             logger.error(f"Prediction error: {e}")
             raise
+
+    def extract_training_features(self, image_bytes):
+        """Extract full feature dict for training storage"""
+        enhanced, original = self.preprocess_image(image_bytes)
+        return self.extract_features(enhanced, original)
+
+    def train_model(self, training_data):
+        """Train RandomForest on collected training data"""
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.model_selection import cross_val_score
+
+        X = [d['feature_vector'] for d in training_data]
+        y = [d['label'] for d in training_data]
+
+        model = RandomForestClassifier(n_estimators=100, random_state=42, max_depth=10)
+
+        accuracy = 0.0
+        if len(X) >= 10:
+            cv_folds = min(5, len(set(y)))
+            if cv_folds >= 2:
+                scores = cross_val_score(model, X, y, cv=cv_folds, scoring='accuracy')
+                accuracy = float(scores.mean())
+
+        model.fit(X, y)
+        self.trained_model = model
+        self.is_trained = True
+        self.feature_keys = sorted(training_data[0]['features'].keys()) if training_data else None
+
+        return {
+            'samples': len(X),
+            'classes': list(set(y)),
+            'accuracy': accuracy,
+            'feature_count': len(X[0]) if X else 0
+        }
+
+    def serialize_model(self):
+        if self.trained_model:
+            return base64.b64encode(pickle.dumps(self.trained_model)).decode('utf-8')
+        return None
+
+    def deserialize_model(self, model_b64):
+        self.trained_model = pickle.loads(base64.b64decode(model_b64))
+        self.is_trained = True
+        logger.info("Trained model loaded from database")

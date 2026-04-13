@@ -1,14 +1,33 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { LayoutDashboard, ScanLine, Users, LogOut, Menu, X, Brain } from 'lucide-react';
+import { LayoutDashboard, ScanLine, Users, LogOut, Menu, X, Brain, ShieldCheck, GraduationCap } from 'lucide-react';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
-const navItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/scan', label: 'New Scan', icon: ScanLine },
-  { path: '/patients', label: 'Patients', icon: Users },
-];
+const roleColors = {
+  admin: 'bg-[#E11D48]/10 text-[#E11D48]',
+  doctor: 'bg-[#0EA5E9]/10 text-[#0EA5E9]',
+  nurse: 'bg-[#10B981]/10 text-[#10B981]',
+};
+
+function getNavItems(role) {
+  const items = [
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/scan', label: 'New Scan', icon: ScanLine, minRole: 'doctor' },
+    { path: '/patients', label: 'Patients', icon: Users },
+    { path: '/training', label: 'Training', icon: GraduationCap, minRole: 'doctor' },
+  ];
+  if (role === 'admin') {
+    items.push({ path: '/admin', label: 'Admin', icon: ShieldCheck, minRole: 'admin' });
+  }
+  const hierarchy = { admin: 3, doctor: 2, nurse: 1 };
+  const userLevel = hierarchy[role] || 0;
+  return items.filter(item => {
+    const minLevel = hierarchy[item.minRole] || 0;
+    return userLevel >= minLevel;
+  });
+}
 
 export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
@@ -63,6 +82,7 @@ export default function DashboardLayout({ children }) {
 }
 
 function SidebarContent({ location, onLogout, user, onNavClick }) {
+  const navItems = getNavItems(user?.role);
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2.5 mb-10">
@@ -94,7 +114,12 @@ function SidebarContent({ location, onLogout, user, onNavClick }) {
 
       <div className="pt-6 border-t border-[#E5E7EB]">
         <div className="px-3 mb-3">
-          <p className="text-sm font-medium text-[#111827] truncate">{user?.name}</p>
+          <div className="flex items-center gap-2 mb-0.5">
+            <p className="text-sm font-medium text-[#111827] truncate">{user?.name}</p>
+            <Badge className={`${roleColors[user?.role] || roleColors.nurse} border-0 text-[10px] px-1.5 py-0 capitalize`}>
+              {user?.role}
+            </Badge>
+          </div>
           <p className="text-xs text-[#9CA3AF] truncate">{user?.email}</p>
         </div>
         <Button

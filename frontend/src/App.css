@@ -63,3 +63,15 @@
 .upload-active {
   animation: pulse-border 1.5s ease infinite;
 }
+
+/* Hide Emergent branding badge */
+[data-emergent-badge],
+div[style*="Made with Emergent"],
+a[href*="emergent.sh"][style*="position: fixed"],
+div[style*="position: fixed"][style*="bottom"] a[href*="emergent"],
+body > div[style*="z-index"]:last-of-type:not(#root) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
