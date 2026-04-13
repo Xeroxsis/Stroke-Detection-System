@@ -3,6 +3,8 @@ import numpy as np
 from PIL import Image
 import io
 import logging
+import pickle
+import base64
 
 logger = logging.getLogger(__name__)
 

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "normal_1",
+    "filename": "normal_1.jpg",
+    "label": "Normal Brain CT (Scan A)",
+    "expected": "normal",
+    "description": "Real axial CT scan showing normal brain anatomy with symmetric hemispheres and no signs of hemorrhage or infarction."
+  },
+  {
+    "id": "normal_2",
+    "filename": "normal_2.jpg",
+    "label": "Normal Brain CT (Scan B)",
+    "expected": "normal",
+    "description": "Real axial CT scan showing normal brain anatomy with symmetric hemispheres and no signs of hemorrhage or infarction."
+  },
+  {
+    "id": "hemorrhagic_1",
+    "filename": "hemorrhagic_1.jpg",
+    "label": "Hemorrhagic Stroke CT (Case A)",
+    "expected": "hemorrhagic",
+    "description": "Real axial CT scan showing intracerebral hemorrhage with hyperdense (bright) regions indicating active bleeding."
+  },
+  {
+    "id": "hemorrhagic_2",
+    "filename": "hemorrhagic_2.jpg",
+    "label": "Hemorrhagic Stroke CT (Case B)",
+    "expected": "hemorrhagic",
+    "description": "Real axial CT scan showing intracerebral hemorrhage with hyperdense (bright) regions indicating active bleeding."
+  },
+  {
+    "id": "ischemic_1",
+    "filename": "ischemic_1.jpg",
+    "label": "Ischemic Stroke CT (Case A)",
+    "expected": "ischemic",
+    "description": "Real axial CT scan showing ischemic infarction with hypodense regions indicating tissue damage from blocked blood supply."
+  },
+  {
+    "id": "ischemic_2",
+    "filename": "ischemic_2.jpg",
+    "label": "Ischemic Stroke CT (Case B)",
+    "expected": "ischemic",
+    "description": "Real axial CT scan showing ischemic infarction with hypodense regions indicating tissue damage from blocked blood supply."
+  }
+]

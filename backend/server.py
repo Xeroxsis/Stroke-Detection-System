@@ -724,14 +724,24 @@ async def startup():
     await db.patients.create_index("user_id")
     await db.training_samples.create_index("label")
     await db.training_runs.create_index("created_at")
-    # Load trained model from DB if available
-    saved_model = await db.trained_models.find_one({}, sort=[("created_at", -1)])
-    if saved_model and saved_model.get("model_data"):
+    # Load trained model: first try file, then DB
+    pretrained_path = os.path.join(os.path.dirname(__file__), "pretrained_model.pkl")
+    if os.path.exists(pretrained_path):
         try:
-            stroke_model.deserialize_model(saved_model["model_data"])
-            logger.info("Loaded trained model from database")
+            with open(pretrained_path, 'r') as f:
+                model_b64 = f.read()
+            stroke_model.deserialize_model(model_b64)
+            logger.info("Loaded pre-trained model from file")
         except Exception as e:
-            logger.warning(f"Failed to load trained model: {e}")
+            logger.warning(f"Failed to load pre-trained model file: {e}")
+    else:
+        saved_model = await db.trained_models.find_one({}, sort=[("created_at", -1)])
+        if saved_model and saved_model.get("model_data"):
+            try:
+                stroke_model.deserialize_model(saved_model["model_data"])
+                logger.info("Loaded trained model from database")
+            except Exception as e:
+                logger.warning(f"Failed to load trained model: {e}")
     await seed_admin()
     generate_demo_images()
     logger.info("NeuroScan AI started successfully")
