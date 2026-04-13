@@ -1,0 +1,139 @@
+{
+  "theme": "LIGHT",
+  "archetype": "1 (Organic & Earthy / Medical Minimalist)",
+  "design_philosophy": "Clean, calm, and authoritative medical minimalism. Reduces cognitive load for healthcare professionals while conveying trust and precision through ample white space, muted slate tones, and sharp data visualization. Avoids clinical sterility by using soft blue accents and delicate typography.",
+  "colors": {
+    "background": {
+      "default": "#FAFAFA",
+      "surface": "#FFFFFF",
+      "muted": "#F3F4F6",
+      "glass": "rgba(255, 255, 255, 0.7)"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#4B5563",
+      "muted": "#9CA3AF"
+    },
+    "accents": {
+      "primary": "#0EA5E9",
+      "primary_hover": "#0284C7",
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "danger": "#E11D48"
+    },
+    "borders": {
+      "default": "#E5E7EB",
+      "focus": "#93C5FD"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "heading": "'Outfit', sans-serif",
+      "body": "'Manrope', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "scales": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tight font-light",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-medium",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm text-secondary",
+      "label": "text-xs uppercase tracking-[0.2em] font-bold text-muted"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing: p-6 to p-12 for containers to let data breathe.",
+    "container_padding": "p-8",
+    "grid_modes": {
+      "marketing": "grid-cols-1 md:grid-cols-12 gap-12",
+      "dashboard": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
+    },
+    "alignment": "Optical alignment over geometrical. Left-align dense medical data."
+  },
+  "components": {
+    "cards": {
+      "style": "Flat background, 1px subtle border (#E5E7EB), no shadow by default. On hover: slight lift (-translate-y-1) and shadow-lg.",
+      "padding": "p-6",
+      "radius": "rounded-xl"
+    },
+    "buttons": {
+      "primary": "bg-primary text-white font-medium rounded-lg px-6 py-2.5 transition-all hover:bg-primary_hover",
+      "secondary": "bg-white border border-border text-primary font-medium rounded-lg px-6 py-2.5 hover:bg-muted"
+    },
+    "inputs": {
+      "style": "bg-white border border-border rounded-lg p-3 text-base focus:ring-2 focus:ring-focus focus:border-primary transition-all"
+    },
+    "header": {
+      "style": "sticky top-0 z-50 backdrop-blur-xl bg-white/70 border-b border-white/20 shadow-sm"
+    }
+  },
+  "interactions_and_motion": {
+    "hover": "transition-transform duration-200 ease-in-out",
+    "page_load": "staggered fade-in for dashboard widgets (framer-motion)",
+    "feedback": "Micro-interactions on file upload (e.g. drop zone highlight, success checkmark)"
+  },
+  "icons": {
+    "library": "lucide-react",
+    "style": "Stroke width 1.5, crisp and professional."
+  },
+  "media": {
+    "hero_image": {
+      "url": "https://images.unsplash.com/photo-1758691463165-ca9b5bc2b28a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MTJ8MHwxfHNlYXJjaHwxfHxicmFpbiUyMG1yaSUyMHNjYW58ZW58MHx8fHwxNzc2MDYzMjk5fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Doctor consulting with MRI scan on laptop",
+      "alt": "Medical professional analyzing MRI scan"
+    },
+    "dashboard_scan_placeholder": {
+      "url": "https://images.pexels.com/photos/5723875/pexels-photo-5723875.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Detailed brain MRI scan grid",
+      "alt": "Detailed brain MRI scans"
+    },
+    "report_image": {
+      "url": "https://images.pexels.com/photos/7089020/pexels-photo-7089020.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Intricate MRI on computer screen",
+      "alt": "MRI analysis UI on screen"
+    }
+  },
+  "pages": {
+    "landing": {
+      "sections": [
+        "Hero: Trust-building headline ('Precision Stroke Detection'), Call to Action ('Start Analysis'), Hero Image",
+        "Features: Highlighting AI classification (Ischemic, Hemorrhagic), PDF Reports, Patient Records",
+        "How it Works: 3-step process (Upload, Analyze, Report)",
+        "Footer: Minimalist, clean links"
+      ]
+    },
+    "auth": {
+      "style": "Split screen layout. Left: Clean form (Login/Register). Right: Medical brand imagery or abstract calm color."
+    },
+    "dashboard": {
+      "layout": "Sidebar navigation + Main content area",
+      "sections": [
+        "Overview: Quick stats (total scans, recent anomalies)",
+        "Upload Zone: Drag-and-drop area for MRI images with clear visual feedback",
+        "Recent Scans Table: Patient ID, Date, Status/Classification, Action (View/Download)"
+      ]
+    },
+    "scan_results": {
+      "layout": "2-column Bento Grid",
+      "sections": [
+        "Left Col (col-span-2): Large MRI Viewer with zoom/pan capabilities",
+        "Right Col (col-span-1): Classification Results (Confidence score, Type), Patient Info summary, 'Generate PDF Report' button"
+      ]
+    }
+  },
+  "accessibility_and_testing": {
+    "contrast": "Ensure minimum 4.5:1 for normal text against backgrounds. Check APCA standards.",
+    "testing_ids": "All interactive elements must have data-testid (e.g., 'upload-mri-button', 'generate-pdf-button')"
+  },
+  "instructions_to_main_agent": [
+    "Use standard Tailwind CSS and raw HTML structure for marketing pages to allow highly customized layouts.",
+    "Use Shadcn UI primitives for Dashboard complex components (Tables, Dialogs, Dropdowns, Forms) but ensure they follow the minimal 'Flat background, 1px border' rule.",
+    "For the Landing Page hero image, overlay it with a subtle gradient (e.g., bg-gradient-to-r from-white/90 via-white/50 to-transparent) to ensure text legibility while keeping the medical imagery visible.",
+    "All navigation elements must be visible on desktop, avoid hamburger menus outside mobile view.",
+    "Do NOT use 'Inter', 'Roboto', or 'Open Sans' for headings. Strictly use 'Outfit' for headings and 'Manrope' for body text.",
+    "Implement drag-and-drop for MRI uploads.",
+    "For PDF generation, use libraries like jsPDF or html2canvas on the frontend, or a dedicated backend service.",
+    "All .js component files must conform to the design rules specified here."
+  ]
+}
